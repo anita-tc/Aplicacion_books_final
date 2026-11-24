@@ -1,5 +1,11 @@
 package com.example.pantallas
 
+import android.app.Activity
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -7,9 +13,22 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
 
 class DetailsActivity : AppCompatActivity() {
+
+    companion object{
+
+        private const val CANAL_ID = "canal_general"
+        private const val NOTIFICACION_ID = 1
+        private const val CODIGO_PERMISO = 100
+
+    }
+
 
     private lateinit var imgPortadaDetalle: ImageView
     private lateinit var btnFavorito: ImageButton
@@ -36,6 +55,7 @@ class DetailsActivity : AppCompatActivity() {
         db = DataBaseHelper(this)
 
         mostrarInformacionLibro()
+        crearCanalNoti()
     }
 
     // Método para mostrar la información del libro y manejar favoritos
@@ -97,6 +117,7 @@ class DetailsActivity : AppCompatActivity() {
                 if (guardado) {
                     libroFavorito = true
                     Toast.makeText(this, "Libro $titulo agregado a favoritos", Toast.LENGTH_SHORT).show()
+                    mostrarNoti()
                 } else {
                     Toast.makeText(this, "El libro ya se encuentra en favoritos", Toast.LENGTH_SHORT).show()
                 }
@@ -106,6 +127,57 @@ class DetailsActivity : AppCompatActivity() {
             actualizarIconoFavorito()
         }
     }
+
+    // METODO PARA CANAL DE NOTIFICACIONES
+    private fun crearCanalNoti(){
+        //evaluar el permiso del usuario para manejar notificaiones
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+            val canal = NotificationChannel(
+                CANAL_ID,
+                "Notificaciones generales",
+                NotificationManager.IMPORTANCE_DEFAULT
+            )
+
+            canal.description = "Canal de envio de notificaciones sobre la BD"
+
+            // INDICAR EL USU DE NOTIFICACIONES
+            val adminNotificaciones = getSystemService(NotificationManager::class.java)
+
+            adminNotificaciones.createNotificationChannel(canal)
+        }
+    }
+
+    // metodo para mostrar la notificacion
+    private fun mostrarNoti(){
+
+        // verificar los permisos seleccionados por el usuario
+        // si el usuario no ha dado permiso de enviar notificaciones
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS
+        ) != PackageManager.PERMISSION_GRANTED){
+
+            // volver a pedir permiso al usuario
+            ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),CODIGO_PERMISO)
+            Toast.makeText(this, "Autoriza el envio de notificaciones", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val notificacion = NotificationCompat.Builder(this, CANAL_ID)
+            .setSmallIcon(R.drawable.baseline_favorite_24)
+            .setContentTitle("pantallas")
+            .setContentText("Un libro fue añadido a la base de datos")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setAutoCancel(true)
+            .build()
+
+        NotificationManagerCompat
+            .from(this)
+            .notify(
+                NOTIFICACION_ID,
+                notificacion
+            )
+    }
+
+
 
     // Método para actualizar dinámicamente el icono del botón de favorito
     private fun actualizarIconoFavorito() {

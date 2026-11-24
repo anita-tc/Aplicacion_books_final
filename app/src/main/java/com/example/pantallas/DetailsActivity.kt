@@ -56,6 +56,7 @@ class DetailsActivity : AppCompatActivity() {
 
         mostrarInformacionLibro()
         crearCanalNoti()
+
     }
 
     // Método para mostrar la información del libro y manejar favoritos
@@ -101,6 +102,7 @@ class DetailsActivity : AppCompatActivity() {
                 if (eliminado) {
                     libroFavorito = false
                     Toast.makeText(this, "Libro $titulo eliminado de favoritos", Toast.LENGTH_SHORT).show()
+                    mostrarNoti2()
                 } else {
                     Toast.makeText(this, "Error al eliminar de favoritos", Toast.LENGTH_SHORT).show()
                 }
@@ -176,6 +178,37 @@ class DetailsActivity : AppCompatActivity() {
                 notificacion
             )
     }
+
+
+    private fun mostrarNoti2(){
+
+        // verificar los permisos seleccionados por el usuario
+        // si el usuario no ha dado permiso de enviar notificaciones
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED){
+
+            // volver a pedir permiso al usuario
+            ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),CODIGO_PERMISO)
+            Toast.makeText(this, "Autoriza el envio de notificaciones", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val notificacion = NotificationCompat.Builder(this, CANAL_ID)
+            .setSmallIcon(R.drawable.baseline_favorite_24)
+            .setContentTitle("pantallas")
+            .setContentText("Un libro fue eliminado de la base de datos")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setAutoCancel(true)
+            .build()
+
+        NotificationManagerCompat
+            .from(this)
+            .notify(
+                NOTIFICACION_ID,
+                notificacion
+            )
+    }
+
 
 
 
